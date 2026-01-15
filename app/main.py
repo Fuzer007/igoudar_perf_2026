@@ -66,6 +66,11 @@ def create_app() -> FastAPI:
         app.state.scheduler = start_scheduler()
 
         def _initial_update() -> None:
+            import os
+            # Skip auto-update on Render or when explicitly disabled to avoid rate limits
+            if os.getenv("PORT") or os.getenv("DISABLE_STARTUP_UPDATE"):
+                print("[startup] Skipping initial update (running on Render or DISABLE_STARTUP_UPDATE set)")
+                return
             from app.db import SessionLocal
 
             s = SessionLocal()

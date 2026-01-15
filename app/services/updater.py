@@ -68,13 +68,11 @@ def backfill_daily_history(
         target = stocks
 
     tickers = [s.ticker for s in target]
-    # Be gentle: single-ticker batches and a small delay.
+    # Use larger batches (fewer API calls) with adequate sleep between them.
     series_map = fetch_daily_closes(
         tickers,
         start=start_date,
         end=end_date,
-        batch_size=1,
-        sleep_seconds=2.0,
     )
     if not series_map:
         return {"inserted": 0, "skipped": len(tickers), "failed": 0}

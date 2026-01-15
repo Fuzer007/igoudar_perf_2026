@@ -7,6 +7,9 @@ import requests_cache
 import yfinance as yf
 
 
+import os
+import random
+
 _cached_session = requests_cache.CachedSession(
     cache_name="data/yfinance_cache",
     backend="sqlite",
@@ -14,25 +17,27 @@ _cached_session = requests_cache.CachedSession(
 )
 
 
-DEFAULT_BATCH_SIZE = 5
-DEFAULT_BATCH_SLEEP_SECONDS = 1.0
+# Configurable via environment for tuning on different hosts
+DEFAULT_BATCH_SIZE = int(os.getenv("YF_BATCH_SIZE", "10"))
+DEFAULT_BATCH_SLEEP_SECONDS = float(os.getenv("YF_SLEEP_SECONDS", "3.0"))
 
 
 def _download_with_retries(**kwargs):
+    """Download with exponential backoff and jitter to avoid rate limits."""
+    import time
     last_exc: Exception | None = None
-    for delay in (0, 2, 5, 15):
+    for attempt, base_delay in enumerate((0, 5, 15, 45)):
         try:
-            if delay:
-                import time
-
-                time.sleep(delay)
+            if base_delay:
+                # Add jitter: 50-150% of base delay
+                jitter = base_delay * (0.5 + random.random())
+                time.sleep(jitter)
             return yf.download(session=_cached_session, **kwargs)
         except Exception as exc:
             msg = str(exc)
             if "Rate limited" in msg or "Too Many Requests" in msg:
-                import time
-
-                time.sleep(30)
+                # Longer cooldown on rate limit
+                time.sleep(60 + random.randint(0, 30))
             last_exc = exc
     if last_exc is not None:
         raise last_exc
@@ -118,7 +123,7 @@ def fetch_latest_prices(
 
         close = _close_frame(df)
         if close.empty:
-            time.sleep(sleep_seconds)
+            time.sleep(sleep_seconds + random.uniform(0, sleep_seconds))
             continue
 
         for ticker in close.columns:
@@ -128,7 +133,7 @@ def fetch_latest_prices(
             observed_at = _ensure_tz(pd.Timestamp(series.index[-1]).to_pydatetime())
             out[str(ticker)] = (observed_at, float(series.iloc[-1]), None)
 
-        time.sleep(sleep_seconds)
+        time.sleep(sleep_seconds + random.uniform(0, sleep_seconds))
 
     return out
 
