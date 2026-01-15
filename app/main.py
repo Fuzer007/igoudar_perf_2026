@@ -15,7 +15,7 @@ from app.routes.industries import router as industries_router
 from app.routes.stocks import router as stocks_router
 from app.seed import seed_defaults
 from app.services.scheduler import start_scheduler
-from app.services.updater import update_all_prices
+from app.services.updater import finnhub_update_prices
 
 
 def create_app() -> FastAPI:
@@ -75,7 +75,7 @@ def create_app() -> FastAPI:
 
             s = SessionLocal()
             try:
-                update_all_prices(s)
+                finnhub_update_prices(s, delay_seconds=1.0)
             finally:
                 s.close()
 
