@@ -6,6 +6,11 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+import random
+import time
+
+import yfinance as yf
+
 from app.config import DATA_DIR
 from app.models import PricePoint, Stock
 from app.services.yahoo import fetch_daily_closes, fetch_latest_prices, fetch_purchase_closes_on_or_after
@@ -123,6 +128,78 @@ def backfill_daily_history(
 
     session.commit()
     return {"inserted": inserted, "skipped": skipped, "failed": failed}
+
+
+def slow_update_prices(session: Session, *, delay_seconds: float = 5.0) -> dict[str, int]:
+    """Update prices one ticker at a time with delays to avoid rate limits.
+    
+    This is the reliable method used by the scheduler.
+    """
+    updated = 0
+    skipped = 0
+    failed = 0
+
+    stocks = session.execute(select(Stock).where(Stock.active == True)).scalars().all()  # noqa: E712
+    if not stocks:
+        return {"updated": 0, "skipped": 0, "failed": 0}
+
+    print(f"[slow_update] Starting update for {len(stocks)} stocks...")
+    
+    for i, stock in enumerate(stocks):
+        try:
+            # Wait between each ticker to avoid rate limits
+            if i > 0:
+                sleep_time = delay_seconds + random.uniform(0, 2)
+                time.sleep(sleep_time)
+            
+            t = yf.Ticker(stock.ticker)
+            # Get last 2 days of hourly data
+            df = t.history(period="2d", interval="1h", auto_adjust=False)
+            
+            if df is None or df.empty or "Close" not in df.columns:
+                print(f"[slow_update] {stock.ticker}: no data")
+                skipped += 1
+                continue
+            
+            # Get the latest close
+            series = df["Close"].dropna()
+            if series.empty:
+                skipped += 1
+                continue
+            
+            observed_at = series.index[-1].to_pydatetime()
+            if observed_at.tzinfo is None:
+                observed_at = observed_at.replace(tzinfo=dt.timezone.utc)
+            observed_at = observed_at.replace(tzinfo=None, microsecond=0)
+            price = float(series.iloc[-1])
+            
+            # Skip if we already have this timestamp
+            if stock.last_price_at is not None and observed_at <= stock.last_price_at:
+                skipped += 1
+                continue
+            
+            # Add price point
+            session.add(
+                PricePoint(
+                    stock_id=stock.id,
+                    observed_at=observed_at,
+                    price=price,
+                )
+            )
+            stock.last_price = price
+            stock.last_price_at = observed_at
+            session.commit()
+            
+            print(f"[slow_update] {stock.ticker}: {price:.2f}")
+            updated += 1
+            
+        except Exception as e:
+            print(f"[slow_update] {stock.ticker}: error - {e}")
+            failed += 1
+    
+    _mark_updated_now()
+    print(f"[slow_update] Done: {updated} updated, {skipped} skipped, {failed} failed")
+    return {"updated": updated, "skipped": skipped, "failed": failed}
 
 
 def update_all_prices(session: Session, *, force: bool = False) -> dict[str, int]:

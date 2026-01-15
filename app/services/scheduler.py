@@ -4,18 +4,20 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.config import settings
 from app.db import SessionLocal
-from app.services.updater import update_all_prices
+from app.services.updater import slow_update_prices
 
 
 def start_scheduler() -> AsyncIOScheduler:
     scheduler = AsyncIOScheduler(timezone="UTC")
 
     def _job() -> None:
+        print("[scheduler] Starting hourly price update...")
         session = SessionLocal()
         try:
-            update_all_prices(session)
+            slow_update_prices(session, delay_seconds=5.0)
         finally:
             session.close()
+        print("[scheduler] Hourly update complete.")
 
     scheduler.add_job(
         _job,

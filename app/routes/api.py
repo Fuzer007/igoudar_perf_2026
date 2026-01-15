@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from app.db import SessionLocal
 from app.models import Industry, Stock
-from app.services.updater import backfill_daily_history, compute_return_abs, compute_return_pct, update_all_prices
+from app.services.updater import backfill_daily_history, compute_return_abs, compute_return_pct, slow_update_prices
 
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -92,10 +92,10 @@ def summary() -> dict:
 
 @router.post("/actions/update")
 def action_update() -> dict:
-    """Best-effort latest price update (may be rate-limited by Yahoo)."""
+    """Slow but reliable price update (one ticker at a time with delays)."""
     session = SessionLocal()
     try:
-        result = update_all_prices(session, force=True)
+        result = slow_update_prices(session, delay_seconds=5.0)
         return {"ok": True, "result": result}
     finally:
         session.close()
