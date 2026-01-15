@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from sqlalchemy import create_engine
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.config import DATA_DIR, settings
@@ -31,5 +32,14 @@ db_url = _normalize_database_url(settings.database_url)
 _ensure_sqlite_dir(db_url)
 
 connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
-engine = create_engine(db_url, future=True, connect_args=connect_args)
+
+try:
+    safe_url = make_url(db_url).set(password="***")
+except Exception:
+    safe_url = "<invalid DATABASE_URL>"
+
+try:
+    engine = create_engine(db_url, future=True, connect_args=connect_args)
+except Exception as exc:
+    raise RuntimeError(f"Failed to create SQLAlchemy engine for {safe_url}") from exc
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
