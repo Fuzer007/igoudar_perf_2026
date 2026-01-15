@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from app.db import SessionLocal
 from app.models import Industry, Stock
-from app.services.updater import compute_return_abs, compute_return_pct, slow_backfill_daily_history, slow_update_prices
+from app.services.updater import compute_return_abs, compute_return_pct, finnhub_update_prices, slow_backfill_daily_history
 
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -92,10 +92,10 @@ def summary() -> dict:
 
 @router.post("/actions/update")
 def action_update() -> dict:
-    """Slow but reliable price update (one ticker at a time with delays)."""
+    """Update prices using Finnhub API (works from cloud servers)."""
     session = SessionLocal()
     try:
-        result = slow_update_prices(session, delay_seconds=5.0)
+        result = finnhub_update_prices(session, delay_seconds=1.0)
         return {"ok": True, "result": result}
     finally:
         session.close()

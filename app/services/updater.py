@@ -14,6 +14,7 @@ import yfinance as yf
 from app.config import DATA_DIR
 from app.models import PricePoint, Stock
 from app.services.yahoo import fetch_daily_closes, fetch_latest_prices, fetch_purchase_closes_on_or_after
+from app.services import finnhub
 
 
 _LAST_UPDATE_FILE = DATA_DIR / "last_update_utc.txt"
@@ -216,6 +217,71 @@ def slow_update_prices(session: Session, *, delay_seconds: float = 12.0) -> dict
     
     _mark_updated_now()
     print(f"[slow_update] Done: {updated} updated, {skipped} skipped, {failed} failed")
+    return {"updated": updated, "skipped": skipped, "failed": failed}
+
+
+def finnhub_update_prices(session: Session, *, delay_seconds: float = 1.0) -> dict[str, int]:
+    """Update prices using Finnhub API - works from cloud servers like Render.
+    
+    Finnhub free tier: 60 calls/minute, so 1 second delay is safe.
+    """
+    updated = 0
+    skipped = 0
+    failed = 0
+
+    stocks = session.execute(select(Stock).where(Stock.active == True)).scalars().all()  # noqa: E712
+    if not stocks:
+        return {"updated": 0, "skipped": 0, "failed": 0}
+
+    print(f"[finnhub_update] Starting update for {len(stocks)} stocks...")
+    
+    for i, stock in enumerate(stocks):
+        if i > 0:
+            time.sleep(delay_seconds)
+        
+        try:
+            quote = finnhub.get_quote(stock.ticker)
+            
+            if not quote or quote.get("c") == 0:
+                print(f"[finnhub_update] {stock.ticker}: no data")
+                skipped += 1
+                continue
+            
+            price = float(quote["c"])  # current price
+            timestamp = quote.get("t", 0)  # Unix timestamp
+            
+            if timestamp:
+                observed_at = dt.datetime.fromtimestamp(timestamp, tz=dt.timezone.utc).replace(tzinfo=None)
+            else:
+                observed_at = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+            
+            # Skip if we already have this or newer
+            if stock.last_price_at and observed_at <= stock.last_price_at:
+                print(f"[finnhub_update] {stock.ticker}: already up to date")
+                skipped += 1
+                continue
+            
+            # Add price point
+            session.add(
+                PricePoint(
+                    stock_id=stock.id,
+                    observed_at=observed_at,
+                    price=price,
+                )
+            )
+            stock.last_price = price
+            stock.last_price_at = observed_at
+            session.commit()
+            
+            print(f"[finnhub_update] {stock.ticker}: ${price:.2f}")
+            updated += 1
+            
+        except Exception as e:
+            print(f"[finnhub_update] {stock.ticker}: error - {e}")
+            failed += 1
+    
+    _mark_updated_now()
+    print(f"[finnhub_update] Done: {updated} updated, {skipped} skipped, {failed} failed")
     return {"updated": updated, "skipped": skipped, "failed": failed}
 
 
