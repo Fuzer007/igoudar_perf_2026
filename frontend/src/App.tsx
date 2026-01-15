@@ -250,9 +250,9 @@ function App() {
               <thead>
                 <tr>
                   <th>TICKER</th>
-                  <th>NAME</th>
-                  <th>IND</th>
-                  <th className="num">P/L</th>
+                  <th className="hide-mobile">NAME</th>
+                  <th className="hide-mobile">IND</th>
+                  <th className="num hide-mobile">P/L</th>
                   <th className="num">%RTN</th>
                   <th className="num">LAST</th>
                 </tr>
@@ -266,9 +266,9 @@ function App() {
                     style={{ cursor: 'pointer' }}
                   >
                     <td style={{ fontWeight: 700, color: 'var(--cyan)' }}>{s.ticker}</td>
-                    <td>{s.name}</td>
-                    <td className="muted">{s.industry ?? '--'}</td>
-                    <td className={`num ${clsForPct(s.return_abs)}`}>{fmtMoney(s.return_abs)}</td>
+                    <td className="hide-mobile">{s.name}</td>
+                    <td className="muted hide-mobile">{s.industry ?? '--'}</td>
+                    <td className={`num hide-mobile ${clsForPct(s.return_abs)}`}>{fmtMoney(s.return_abs)}</td>
                     <td className={`num ${clsForPct(s.return_pct)}`}>{fmtPct(s.return_pct)}</td>
                     <td className="num">{fmtMoney(s.last_price)}</td>
                   </tr>

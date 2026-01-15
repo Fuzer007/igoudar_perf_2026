@@ -32,14 +32,16 @@
 @media (max-width: 768px) {
   .terminal-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto auto;
+    grid-template-rows: auto minmax(280px, auto) minmax(160px, auto) auto auto;
     gap: 6px;
     padding: 6px;
     height: auto;
     min-height: 100%;
+    overflow-y: auto;
   }
   .topbar {
     grid-column: 1;
+    grid-row: 1;
     flex-wrap: wrap;
     padding: 8px;
     gap: 8px;
@@ -54,19 +56,24 @@
     padding: 8px 12px;
     font-size: 12px;
   }
-  .left {
-    grid-column: 1;
-    grid-row: 2;
-    max-height: 200px;
-  }
+  /* Stocks first on mobile */
   .center {
     grid-column: 1;
-    grid-row: 3;
-    min-height: 300px;
+    grid-row: 2;
+    min-height: 280px;
   }
+  /* Industries after stocks */
+  .left {
+    grid-column: 1;
+    grid-row: 3;
+    min-height: 160px;
+    max-height: none;
+  }
+  /* Detail panel */
   .right {
     grid-column: 1;
     grid-row: 4;
+    min-height: 200px;
     max-height: none;
   }
   .statusbar {
@@ -75,6 +82,7 @@
     flex-wrap: wrap;
     gap: 4px;
     padding: 6px;
+    font-size: 10px;
   }
 }
 
@@ -311,6 +319,49 @@
   .panel-body {
     padding: 6px;
     height: auto;
-    max-height: 400px;
+    overflow-y: auto;
+  }
+  /* Make sure panels are visible */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .left .panel-body,
+  .center .panel-body {
+    flex: 1;
+    overflow-y: auto;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .terminal-grid {
+    padding: 4px;
+    gap: 4px;
+  }
+  .topbar {
+    padding: 6px;
+    gap: 6px;
+  }
+  .topbar .brand {
+    font-size: 11px;
+  }
+  .topbar .btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .table {
+    font-size: 10px;
+  }
+  .table th,
+  .table td {
+    padding: 6px 4px;
+  }
+  .panel-title .label {
+    font-size: 11px;
+  }
+  .statusbar {
+    font-size: 9px;
   }
 }
