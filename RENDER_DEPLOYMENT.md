@@ -17,9 +17,7 @@ This app is a **FastAPI backend + React frontend SPA** that:
 
 #### Build Command
 ```bash
-pip install -r requirements.txt \
-   && npm --prefix frontend ci --include=dev \
-   && npm --prefix frontend run build
+pip install -r requirements.txt && npm --prefix frontend ci --include=dev && npm --prefix frontend run build
 ```
 
 #### Start Command
@@ -41,7 +39,7 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
 ### 4. Environment Variables
 If needed, add to Render dashboard:
-- `DATABASE_URL` (optional; defaults to `data/app.db` on local filesystem)
+- `DATABASE_URL` (optional; defaults to `sqlite:///./data/app.db`)
 - `PORT` (Render sets this automatically)
 
 ### 5. Disk Persistence
@@ -72,7 +70,7 @@ Yahoo Finance may rate-limit requests from the same IP. Use:
 
 ### Database Persistence
 On Render's ephemeral filesystem, the SQLite DB is lost on redeploy. Consider:
-- Migrating to PostgreSQL (Render offers managed databases)
+- Migrating to PostgreSQL (Render offers managed databases). This repo supports Render-style `postgres://...` URLs via `psycopg`.
 - Or add a persistent disk mount in Render settings
 
 ### Hourly Scheduler
