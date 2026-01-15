@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from app.db import SessionLocal
 from app.models import Industry, Stock
-from app.services.updater import compute_return_abs, compute_return_pct, finnhub_update_prices, slow_backfill_daily_history
+from app.services.updater import compute_return_abs, compute_return_pct, finnhub_update_prices, finnhub_backfill_history
 
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -103,10 +103,10 @@ def action_update() -> dict:
 
 @router.post("/actions/backfill")
 def action_backfill() -> dict:
-    """Slow but reliable daily backfill (one ticker at a time with delays)."""
+    """Backfill daily history using Finnhub API."""
     session = SessionLocal()
     try:
-        result = slow_backfill_daily_history(session, delay_seconds=5.0)
+        result = finnhub_backfill_history(session, delay_seconds=1.0)
         return {"ok": True, "result": result}
     finally:
         session.close()
