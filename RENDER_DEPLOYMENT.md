@@ -42,10 +42,13 @@ If needed, add to Render dashboard:
 - `DATABASE_URL` (optional; defaults to `sqlite:///./data/app.db`)
 - `PORT` (Render sets this automatically)
 
+Notes:
+- If you mount a Render persistent disk at `/data`, the app will automatically use `sqlite:////data/app.db` when `DATABASE_URL` is not set.
+
 ### 5. Disk Persistence
 Render ephemeral disks reset on redeploy. For persistent SQLite DB:
 - **Option A (Recommended):** Integrate a PostgreSQL database and set `DATABASE_URL`
-- **Option B:** Mount a persistent disk in Render dashboard for `/data/`
+- **Option B:** Mount a persistent disk in Render dashboard for `/data/` (and either set `DATABASE_URL=sqlite:////data/app.db` or leave it unset to auto-detect)
 
 ### 6. First Deploy
 1. Render will:
