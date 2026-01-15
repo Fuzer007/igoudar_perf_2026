@@ -202,6 +202,96 @@ def slow_update_prices(session: Session, *, delay_seconds: float = 5.0) -> dict[
     return {"updated": updated, "skipped": skipped, "failed": failed}
 
 
+def slow_backfill_daily_history(
+    session: Session,
+    *,
+    start_date: dt.date | None = None,
+    delay_seconds: float = 5.0,
+) -> dict[str, int]:
+    """Backfill daily history one ticker at a time with delays to avoid rate limits.
+    
+    This is the reliable method for populating the database.
+    """
+    inserted = 0
+    skipped = 0
+    failed = 0
+
+    stocks = session.execute(select(Stock).where(Stock.active == True)).scalars().all()  # noqa: E712
+    if not stocks:
+        return {"inserted": 0, "skipped": 0, "failed": 0}
+
+    if start_date is None:
+        start_date = min(s.purchase_date for s in stocks)
+    
+    end_date = dt.date.today() + dt.timedelta(days=1)
+    
+    print(f"[slow_backfill] Starting backfill for {len(stocks)} stocks from {start_date}...")
+    
+    for i, stock in enumerate(stocks):
+        try:
+            # Wait between each ticker to avoid rate limits
+            if i > 0:
+                sleep_time = delay_seconds + random.uniform(0, 2)
+                time.sleep(sleep_time)
+            
+            print(f"[slow_backfill] [{i+1}/{len(stocks)}] {stock.ticker}...", end=" ", flush=True)
+            
+            t = yf.Ticker(stock.ticker)
+            df = t.history(start=start_date, end=end_date, interval="1d", auto_adjust=False)
+            
+            if df is None or df.empty or "Close" not in df.columns:
+                print("no data")
+                failed += 1
+                continue
+            
+            # Get existing timestamps to avoid duplicates
+            existing = set()
+            for pp in stock.prices:
+                existing.add(pp.observed_at)
+            
+            ticker_inserted = 0
+            for idx, row in df.iterrows():
+                observed_at = idx.to_pydatetime()
+                if observed_at.tzinfo is None:
+                    observed_at = observed_at.replace(tzinfo=dt.timezone.utc)
+                observed_at = observed_at.replace(tzinfo=None, microsecond=0)
+                
+                if observed_at in existing:
+                    skipped += 1
+                    continue
+                
+                price = float(row["Close"])
+                session.add(
+                    PricePoint(
+                        stock_id=stock.id,
+                        observed_at=observed_at,
+                        price=price,
+                    )
+                )
+                existing.add(observed_at)
+                inserted += 1
+                ticker_inserted += 1
+                
+                # Set purchase price if needed
+                if stock.purchase_price is None and observed_at.date() >= stock.purchase_date:
+                    stock.purchase_price = price
+                
+                # Update last price
+                if stock.last_price_at is None or observed_at >= stock.last_price_at:
+                    stock.last_price = price
+                    stock.last_price_at = observed_at
+            
+            session.commit()
+            print(f"+{ticker_inserted}")
+            
+        except Exception as e:
+            print(f"error: {e}")
+            failed += 1
+    
+    print(f"[slow_backfill] Done: {inserted} inserted, {skipped} skipped, {failed} failed")
+    return {"inserted": inserted, "skipped": skipped, "failed": failed}
+
+
 def update_all_prices(session: Session, *, force: bool = False) -> dict[str, int]:
     updated = 0
     skipped = 0

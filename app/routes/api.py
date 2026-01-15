@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from app.db import SessionLocal
 from app.models import Industry, Stock
-from app.services.updater import backfill_daily_history, compute_return_abs, compute_return_pct, slow_update_prices
+from app.services.updater import compute_return_abs, compute_return_pct, slow_backfill_daily_history, slow_update_prices
 
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -102,11 +102,11 @@ def action_update() -> dict:
 
 
 @router.post("/actions/backfill")
-def action_backfill(*, only_missing: bool = True) -> dict:
-    """Best-effort daily backfill. `only_missing=true` targets tickers missing pricing."""
+def action_backfill() -> dict:
+    """Slow but reliable daily backfill (one ticker at a time with delays)."""
     session = SessionLocal()
     try:
-        result = backfill_daily_history(session, only_missing=only_missing)
+        result = slow_backfill_daily_history(session, delay_seconds=5.0)
         return {"ok": True, "result": result}
     finally:
         session.close()
