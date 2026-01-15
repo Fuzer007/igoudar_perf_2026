@@ -16,8 +16,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-from app.config import DATABASE_URL as LOCAL_DB_URL
-from app.models import Base, Stock, PricePoint
+from app.models import Base, Industry, Stock, PricePoint
+
+# Local SQLite database
+LOCAL_DB_URL = "sqlite:///./data/app.db"
 
 
 def main():
@@ -47,12 +49,26 @@ def main():
     print("\nCreating tables on Postgres...")
     Base.metadata.create_all(remote_engine)
     
-    # Export stocks
+    # Export data
     with Session(local_engine) as local_session, Session(remote_engine) as remote_session:
-        # Clear existing data on remote
+        # Clear existing data on remote (in correct order for foreign keys)
         print("Clearing existing data on Postgres...")
         remote_session.execute(text("DELETE FROM price_points"))
         remote_session.execute(text("DELETE FROM stocks"))
+        remote_session.execute(text("DELETE FROM industries"))
+        remote_session.commit()
+        
+        # Copy industries first
+        industries = local_session.query(Industry).all()
+        print(f"\nExporting {len(industries)} industries...")
+        
+        industry_id_map = {}  # local_id -> remote_id
+        for ind in industries:
+            new_industry = Industry(name=ind.name)
+            remote_session.add(new_industry)
+            remote_session.flush()
+            industry_id_map[ind.id] = new_industry.id
+            print(f"  {ind.name}")
         remote_session.commit()
         
         # Copy stocks
@@ -64,7 +80,7 @@ def main():
             new_stock = Stock(
                 ticker=s.ticker,
                 name=s.name,
-                industry=s.industry,
+                industry_id=industry_id_map[s.industry_id],
                 purchase_date=s.purchase_date,
                 purchase_price=s.purchase_price,
                 purchase_currency=s.purchase_currency,
@@ -77,6 +93,7 @@ def main():
             remote_session.flush()
             stock_id_map[s.id] = new_stock.id
             print(f"  {s.ticker}: purchase={s.purchase_price}, last={s.last_price}")
+        remote_session.commit()
         
         # Copy price points
         price_points = local_session.query(PricePoint).all()
