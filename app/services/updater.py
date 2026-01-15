@@ -130,10 +130,11 @@ def backfill_daily_history(
     return {"inserted": inserted, "skipped": skipped, "failed": failed}
 
 
-def slow_update_prices(session: Session, *, delay_seconds: float = 5.0) -> dict[str, int]:
+def slow_update_prices(session: Session, *, delay_seconds: float = 12.0) -> dict[str, int]:
     """Update prices one ticker at a time with delays to avoid rate limits.
     
     This is the reliable method used by the scheduler.
+    Uses longer delays and retry logic for cloud environments (Render, etc).
     """
     updated = 0
     skipped = 0
@@ -144,18 +145,34 @@ def slow_update_prices(session: Session, *, delay_seconds: float = 5.0) -> dict[
         return {"updated": 0, "skipped": 0, "failed": 0}
 
     print(f"[slow_update] Starting update for {len(stocks)} stocks...")
+    print(f"[slow_update] Using {delay_seconds}s base delay between requests")
     
     for i, stock in enumerate(stocks):
+        # Wait between each ticker to avoid rate limits
+        if i > 0:
+            sleep_time = delay_seconds + random.uniform(0, 3)
+            time.sleep(sleep_time)
+        
+        # Retry logic with exponential backoff
+        df = None
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                t = yf.Ticker(stock.ticker)
+                # Get last 2 days of hourly data
+                df = t.history(period="2d", interval="1h", auto_adjust=False)
+                break  # Success, exit retry loop
+            except Exception as e:
+                err_str = str(e).lower()
+                if "rate" in err_str or "too many" in err_str or "429" in err_str:
+                    backoff = (attempt + 1) * 30  # 30s, 60s, 90s
+                    print(f"[slow_update] {stock.ticker}: rate limited, waiting {backoff}s...")
+                    time.sleep(backoff)
+                else:
+                    print(f"[slow_update] {stock.ticker}: error - {e}")
+                    break  # Non-rate-limit error, don't retry
+        
         try:
-            # Wait between each ticker to avoid rate limits
-            if i > 0:
-                sleep_time = delay_seconds + random.uniform(0, 2)
-                time.sleep(sleep_time)
-            
-            t = yf.Ticker(stock.ticker)
-            # Get last 2 days of hourly data
-            df = t.history(period="2d", interval="1h", auto_adjust=False)
-            
             if df is None or df.empty or "Close" not in df.columns:
                 print(f"[slow_update] {stock.ticker}: no data")
                 skipped += 1
@@ -206,11 +223,12 @@ def slow_backfill_daily_history(
     session: Session,
     *,
     start_date: dt.date | None = None,
-    delay_seconds: float = 5.0,
+    delay_seconds: float = 12.0,
 ) -> dict[str, int]:
     """Backfill daily history one ticker at a time with delays to avoid rate limits.
     
     This is the reliable method for populating the database.
+    Uses longer delays and retry logic for cloud environments (Render, etc).
     """
     inserted = 0
     skipped = 0
@@ -226,19 +244,36 @@ def slow_backfill_daily_history(
     end_date = dt.date.today() + dt.timedelta(days=1)
     
     print(f"[slow_backfill] Starting backfill for {len(stocks)} stocks from {start_date}...")
+    print(f"[slow_backfill] Using {delay_seconds}s base delay between requests")
     
     for i, stock in enumerate(stocks):
+        # Wait between each ticker to avoid rate limits
+        if i > 0:
+            sleep_time = delay_seconds + random.uniform(0, 3)
+            print(f"[slow_backfill] Waiting {sleep_time:.1f}s...")
+            time.sleep(sleep_time)
+        
+        print(f"[slow_backfill] [{i+1}/{len(stocks)}] {stock.ticker}...", end=" ", flush=True)
+        
+        # Retry logic with exponential backoff
+        df = None
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                t = yf.Ticker(stock.ticker)
+                df = t.history(start=start_date, end=end_date, interval="1d", auto_adjust=False)
+                break  # Success, exit retry loop
+            except Exception as e:
+                err_str = str(e).lower()
+                if "rate" in err_str or "too many" in err_str or "429" in err_str:
+                    backoff = (attempt + 1) * 30  # 30s, 60s, 90s
+                    print(f"rate limited, waiting {backoff}s...", end=" ", flush=True)
+                    time.sleep(backoff)
+                else:
+                    print(f"error: {e}")
+                    break  # Non-rate-limit error, don't retry
+        
         try:
-            # Wait between each ticker to avoid rate limits
-            if i > 0:
-                sleep_time = delay_seconds + random.uniform(0, 2)
-                time.sleep(sleep_time)
-            
-            print(f"[slow_backfill] [{i+1}/{len(stocks)}] {stock.ticker}...", end=" ", flush=True)
-            
-            t = yf.Ticker(stock.ticker)
-            df = t.history(start=start_date, end=end_date, interval="1d", auto_adjust=False)
-            
             if df is None or df.empty or "Close" not in df.columns:
                 print("no data")
                 failed += 1
