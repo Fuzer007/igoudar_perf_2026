@@ -6,10 +6,10 @@ from starlette.responses import RedirectResponse
 from app.db import SessionLocal
 from app.models import Industry, Stock
 from app.services.updater import (
-    backfill_daily_history,
     compute_return_abs,
     compute_return_pct,
-    update_all_prices,
+    finnhub_backfill_history,
+    finnhub_update_prices,
 )
 from app.web import templates
 
@@ -96,7 +96,7 @@ def home(request: Request):
 def update_now(request: Request):
     session = SessionLocal()
     try:
-        update_all_prices(session, force=True)
+        finnhub_update_prices(session, delay_seconds=1.0)
     finally:
         session.close()
     return RedirectResponse(url="/", status_code=303)
@@ -106,7 +106,7 @@ def update_now(request: Request):
 def backfill_now(request: Request):
     session = SessionLocal()
     try:
-        backfill_daily_history(session, only_missing=True)
+        finnhub_backfill_history(session, delay_seconds=1.0)
     finally:
         session.close()
     return RedirectResponse(url="/", status_code=303)
