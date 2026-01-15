@@ -1,0 +1,35 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run FastAPI (uvicorn)",
+			"type": "shell",
+			"command": "./.venv/bin/uvicorn",
+			"args": [
+				"app.main:app",
+				"--reload",
+				"--reload-dir",
+				"app"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "Run Frontend (vite)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"frontend",
+				"run",
+				"dev",
+				"--",
+				"--port",
+				"5173"
+			],
+			"isBackground": true,
+			"group": "test"
+		}
+	]
+}

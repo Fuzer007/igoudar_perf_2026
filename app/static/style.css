@@ -1,0 +1,86 @@
+/* Modern, clean styling on top of Bootstrap */
+
+:root {
+	--app-bg-1: #f7f9ff;
+	--app-bg-2: #f3f4ff;
+	--app-card: rgba(255, 255, 255, 0.9);
+	--app-border: rgba(15, 23, 42, 0.08);
+	--app-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+	--app-shadow-sm: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+html, body {
+	height: 100%;
+}
+
+body {
+	background:
+		radial-gradient(1200px 700px at 15% -10%, var(--app-bg-2), transparent 60%),
+		radial-gradient(1200px 700px at 85% -10%, #f0fbff, transparent 60%),
+		linear-gradient(180deg, var(--app-bg-1), #fff 40%, #fff);
+}
+
+.navbar {
+	backdrop-filter: blur(10px);
+}
+
+.navbar-brand {
+	font-weight: 700;
+	letter-spacing: 0.2px;
+}
+
+.app-shell {
+	max-width: 1200px;
+}
+
+.card {
+	border: 1px solid var(--app-border);
+	border-radius: 14px;
+	background: var(--app-card);
+	box-shadow: var(--app-shadow-sm);
+}
+
+.card-header {
+	border-bottom: 1px solid var(--app-border);
+}
+
+.table thead th {
+	font-size: 0.85rem;
+	color: rgba(15, 23, 42, 0.75);
+	text-transform: none;
+	white-space: nowrap;
+}
+
+.table tbody td {
+	vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+	background-color: rgba(99, 102, 241, 0.06);
+}
+
+.badge-soft {
+	border: 1px solid var(--app-border);
+	font-weight: 600;
+}
+
+.num {
+	font-variant-numeric: tabular-nums;
+}
+
+.muted {
+	color: rgba(15, 23, 42, 0.6);
+}
+
+.btn {
+	border-radius: 10px;
+}
+
+.btn-outline-primary {
+	border-color: rgba(99, 102, 241, 0.35);
+}
+
+.btn-outline-primary:hover {
+	border-color: rgba(99, 102, 241, 0.6);
+}
+

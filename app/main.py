@@ -1,0 +1,65 @@
+from __future__ import annotations
+
+import threading
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from app.db import engine
+from app.models import Base
+from app.routes.api import router as api_router
+from app.routes.home import router as home_router
+from app.routes.industries import router as industries_router
+from app.routes.stocks import router as stocks_router
+from app.seed import seed_defaults
+from app.services.scheduler import start_scheduler
+from app.services.updater import update_all_prices
+
+
+def create_app() -> FastAPI:
+    app = FastAPI(title="Stock Performance Tracker")
+    static_dir = Path(__file__).resolve().parent / "static"
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+    app.include_router(api_router)
+    app.include_router(home_router)
+    app.include_router(stocks_router)
+    app.include_router(industries_router)
+
+    @app.on_event("startup")
+    def _startup() -> None:
+        Base.metadata.create_all(bind=engine)
+
+        from app.db import SessionLocal
+
+        session = SessionLocal()
+        try:
+            seed_defaults(session)
+            session.commit()
+        finally:
+            session.close()
+
+        app.state.scheduler = start_scheduler()
+
+        def _initial_update() -> None:
+            from app.db import SessionLocal
+
+            s = SessionLocal()
+            try:
+                update_all_prices(s)
+            finally:
+                s.close()
+
+        threading.Thread(target=_initial_update, daemon=True).start()
+
+    @app.on_event("shutdown")
+    def _shutdown() -> None:
+        sched = getattr(app.state, "scheduler", None)
+        if sched is not None:
+            sched.shutdown(wait=False)
+
+    return app
+
+
+app = create_app()

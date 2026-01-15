@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-0">{{ stock.ticker }} <span class="text-muted">— {{ stock.name }}</span></h1>
+      <div class="text-muted">Purchase date: {{ stock.purchase_date }}</div>
+    </div>
+    <div class="text-end">
+      <div class="small text-muted">Return</div>
+      <div class="fs-5 fw-semibold">
+        {% if return_pct is not none %}{{ "%.2f"|format(return_pct) }}%{% else %}—{% endif %}
+      </div>
+      <div class="small text-muted">{% if return_abs is not none %}{{ "%.2f"|format(return_abs) }}{% else %}—{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <canvas id="priceChart" height="90"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>Observed at</th>
+            <th class="text-end">Price</th>
+            <th>Currency</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in prices %}
+          <tr>
+            <td>{{ p.observed_at }}</td>
+            <td class="text-end">{{ "%.2f"|format(p.price) }}</td>
+            <td>{{ p.currency or "" }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="text-muted">No price points yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script>
+    const points = {{ chart_points | tojson }};
+    const ctx = document.getElementById('priceChart');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: 'Price',
+          data: points,
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.2,
+        }]
+      },
+      options: {
+        parsing: false,
+        scales: {
+          x: { type: 'time', time: { tooltipFormat: 'yyyy-MM-dd HH:mm' } }
+        }
+      }
+    });
+  </script>
+{% endblock %}

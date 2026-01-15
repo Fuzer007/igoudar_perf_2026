@@ -1,0 +1,220 @@
+.terminal-root {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.terminal-grid {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 320px minmax(520px, 1fr) 360px;
+  grid-template-rows: 44px 1fr 30px;
+  gap: 8px;
+  padding: 10px;
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 30%), var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2) inset;
+  overflow: hidden;
+}
+
+.topbar {
+  grid-column: 1 / 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px;
+  background: linear-gradient(90deg, rgba(255, 179, 0, 0.16), rgba(55, 216, 255, 0.09));
+  border: 1px solid var(--border);
+}
+
+.topbar .brand {
+  color: var(--amber);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+}
+
+.ticker {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  padding-left: 12px;
+}
+
+.ticker-track {
+  display: inline-flex;
+  gap: 18px;
+  white-space: nowrap;
+  will-change: transform;
+  animation: ticker-move 28s linear infinite;
+}
+
+@keyframes ticker-move {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.tick {
+  display: inline-flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.tick .sym {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.tick .pct.pos {
+  color: var(--green);
+}
+
+.tick .pct.neg {
+  color: var(--red);
+}
+
+.left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.center {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.statusbar {
+  grid-column: 1 / 4;
+  grid-row: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.panel-title {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-title .label {
+  color: var(--amber);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
+.panel-body {
+  padding: 8px;
+  height: calc(100% - 38px);
+  overflow: auto;
+}
+
+.btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--text);
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: rgba(255, 179, 0, 0.5);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: rgba(7, 11, 20, 0.96);
+  backdrop-filter: blur(8px);
+}
+
+.table tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.table tr.selected {
+  outline: 1px solid rgba(255, 179, 0, 0.5);
+  background: rgba(255, 179, 0, 0.08);
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pos {
+  color: var(--green);
+}
+
+.neg {
+  color: var(--red);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.kpi {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.kpi .box {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.kpi .box .name {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.kpi .box .val {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 700;
+}

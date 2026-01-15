@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+    <div>
+      <h1 class="h3 mb-0">Dashboard</h1>
+      <div class="muted small">Performance since Jan 2, 2026</div>
+    </div>
+    <span class="badge badge-soft text-bg-light">Hourly updater + daily backfill</span>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="text-muted">Stocks</div>
+          <div class="display-6">{{ stock_count }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="text-muted">Industries</div>
+          <div class="display-6">{{ industry_count }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="text-muted">Updater</div>
+          <div class="fw-semibold">Runs every hour</div>
+          <div class="small text-muted">(configurable)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <h2 class="h5 mb-0">Summary</h2>
+    <div class="d-flex gap-2 align-items-center">
+      <span class="small text-muted">Prices loaded: {{ priced_count }} / {{ stock_count }}</span>
+      <a class="btn btn-sm btn-outline-primary" href="/update-now">Update now</a>
+      <a class="btn btn-sm btn-outline-secondary" href="/backfill-now">Backfill history</a>
+    </div>
+  </div>
+
+  {% if priced_count == 0 %}
+  <div class="alert alert-warning">
+    No prices are loaded yet, so performance is blank. This is usually because Yahoo Finance is rate-limiting requests.
+    Wait a bit and try <a href="/update-now">Update now</a> again.
+  </div>
+  {% endif %}
+
+  {% if missing_count and missing_count > 0 %}
+  <div class="alert alert-info">
+    <div class="fw-semibold">Missing Yahoo data for {{ missing_count }} stock(s)</div>
+    <div class="small">{{ missing_tickers }}</div>
+    <div class="small text-muted">If Yahoo is rate-limiting, wait 30–60 minutes or change network, then click “Backfill history”.</div>
+  </div>
+  {% endif %}
+
+  <div class="row g-3 mb-4">
+    <div class="col-lg-5">
+      <div class="card h-100">
+        <div class="card-header bg-white fw-semibold">Industries</div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th class="text-end">Stocks</th>
+                <th class="text-end">Priced</th>
+                <th class="text-end">Avg return %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in industry_rows %}
+              <tr>
+                <td><a href="/industries/{{ r.id }}">{{ r.name }}</a></td>
+                <td class="text-end num">{{ r.stock_count }}</td>
+                <td class="text-end num">{{ r.priced_count }}</td>
+                <td class="text-end num">
+                  {% if r.avg_return_pct is not none %}
+                    {% if r.avg_return_pct >= 0 %}
+                      <span class="badge text-bg-success">+{{ "%.2f"|format(r.avg_return_pct) }}%</span>
+                    {% else %}
+                      <span class="badge text-bg-danger">{{ "%.2f"|format(r.avg_return_pct) }}%</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header bg-white fw-semibold">Stocks</div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Name</th>
+                <th>Industry</th>
+                <th class="text-end">Purchase</th>
+                <th class="text-end">Latest</th>
+                <th class="text-end">P/L</th>
+                <th class="text-end">Return %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in rows %}
+              <tr>
+                <td><a href="/stocks/{{ r.id }}">{{ r.ticker }}</a></td>
+                <td>{{ r.name }}</td>
+                <td class="muted">{{ r.industry }}</td>
+                <td class="text-end num">{% if r.purchase_price is not none %}{{ "%.2f"|format(r.purchase_price) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td class="text-end num">{% if r.last_price is not none %}{{ "%.2f"|format(r.last_price) }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                <td class="text-end num">
+                  {% if r.return_abs is not none %}
+                    {% if r.return_abs >= 0 %}
+                      <span class="text-success fw-semibold">+{{ "%.2f"|format(r.return_abs) }}</span>
+                    {% else %}
+                      <span class="text-danger fw-semibold">{{ "%.2f"|format(r.return_abs) }}</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td class="text-end num">
+                  {% if r.return_pct is not none %}
+                    {% if r.return_pct >= 0 %}
+                      <span class="badge text-bg-success">+{{ "%.2f"|format(r.return_pct) }}%</span>
+                    {% else %}
+                      <span class="badge text-bg-danger">{{ "%.2f"|format(r.return_pct) }}%</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

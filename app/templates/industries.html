@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex align-items-end justify-content-between mb-3">
+    <h1 class="h3 mb-0">Industries</h1>
+    <span class="badge badge-soft text-bg-light">Aggregated performance</span>
+  </div>
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th class="text-end">Stocks</th>
+            <th class="text-end">Avg return %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td><a href="/industries/{{ r.id }}">{{ r.name }}</a></td>
+            <td class="text-end num">{{ r.stock_count }}</td>
+            <td class="text-end num">
+              {% if r.avg_return_pct is not none %}
+                {% if r.avg_return_pct >= 0 %}
+                  <span class="badge text-bg-success">+{{ "%.2f"|format(r.avg_return_pct) }}%</span>
+                {% else %}
+                  <span class="badge text-bg-danger">{{ "%.2f"|format(r.avg_return_pct) }}%</span>
+                {% endif %}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
