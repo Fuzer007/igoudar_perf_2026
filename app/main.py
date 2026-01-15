@@ -5,6 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import FileResponse
 
 from app.db import engine
 from app.models import Base
@@ -21,6 +22,28 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Stock Performance Tracker")
     static_dir = Path(__file__).resolve().parent / "static"
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+    # Serve built React frontend (if available)
+    frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+    if frontend_dist.exists():
+
+        @app.middleware("http")
+        async def spa_fallback(request, call_next):
+            # Let backend routes through
+            if request.url.path.startswith(("/api", "/static", "/update-now", "/backfill-now")):
+                return await call_next(request)
+            # Try static file from frontend/dist
+            try:
+                file_path = frontend_dist / request.url.path.lstrip("/")
+                if file_path.is_file():
+                    return FileResponse(file_path)
+            except Exception:
+                pass
+            # Fallback to index.html for SPA client routing
+            index_file = frontend_dist / "index.html"
+            if index_file.exists():
+                return FileResponse(index_file, media_type="text/html")
+            return await call_next(request)
 
     app.include_router(api_router)
     app.include_router(home_router)
