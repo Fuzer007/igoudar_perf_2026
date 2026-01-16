@@ -89,8 +89,13 @@ def finnhub_update_prices(session: Session, *, delay_seconds: float = 1.0) -> di
             else:
                 observed_at = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
             
+            # Normalize stored last_price_at to naive UTC for comparison
+            stored_time = stock.last_price_at
+            if stored_time and stored_time.tzinfo is not None:
+                stored_time = stored_time.astimezone(dt.timezone.utc).replace(tzinfo=None)
+            
             # Skip if we already have this or newer
-            if stock.last_price_at and observed_at <= stock.last_price_at:
+            if stored_time and observed_at <= stored_time:
                 print(f"[finnhub_update] {stock.ticker}: already up to date")
                 skipped += 1
                 continue
@@ -127,82 +132,9 @@ def finnhub_backfill_history(
 ) -> dict[str, int]:
     """Backfill daily history using Finnhub candles API.
     
-    Finnhub free tier: 60 calls/minute.
+    WARNING: Finnhub free tier does NOT have access to candles endpoint (403 Forbidden).
+    This function will fail. Use only finnhub_update_prices() which uses the quote endpoint.
     """
-    inserted = 0
-    skipped = 0
-    failed = 0
-
-    stocks = session.execute(select(Stock).where(Stock.active == True)).scalars().all()  # noqa: E712
-    if not stocks:
-        return {"inserted": 0, "skipped": 0, "failed": 0}
-
-    if start_date is None:
-        start_date = min(s.purchase_date for s in stocks)
-    
-    end_date = dt.date.today() + dt.timedelta(days=1)
-    
-    # Convert to Unix timestamps
-    from_ts = int(dt.datetime.combine(start_date, dt.time.min).timestamp())
-    to_ts = int(dt.datetime.combine(end_date, dt.time.max).timestamp())
-    
-    print(f"[finnhub_backfill] Starting backfill for {len(stocks)} stocks from {start_date}...")
-    
-    for i, stock in enumerate(stocks):
-        if i > 0:
-            time.sleep(delay_seconds)
-        
-        print(f"[finnhub_backfill] [{i+1}/{len(stocks)}] {stock.ticker}...", end=" ", flush=True)
-        
-        try:
-            candles = finnhub.get_candles(stock.ticker, from_ts, to_ts, resolution="D")
-            
-            if not candles:
-                print("no data")
-                failed += 1
-                continue
-            
-            # Get existing timestamps to avoid duplicates
-            existing = set()
-            for pp in stock.prices:
-                existing.add(pp.observed_at)
-            
-            ticker_inserted = 0
-            for ts, open_p, high, low, close, volume in candles:
-                observed_at = dt.datetime.fromtimestamp(ts, tz=dt.timezone.utc).replace(tzinfo=None)
-                
-                if observed_at in existing:
-                    skipped += 1
-                    continue
-                
-                price = float(close)
-                session.add(
-                    PricePoint(
-                        stock_id=stock.id,
-                        observed_at=observed_at,
-                        price=price,
-                    )
-                )
-                existing.add(observed_at)
-                inserted += 1
-                ticker_inserted += 1
-                
-                # Set purchase price if needed (first price on or after purchase date)
-                if stock.purchase_price is None and observed_at.date() >= stock.purchase_date:
-                    stock.purchase_price = price
-                
-                # Update last price
-                if stock.last_price_at is None or observed_at >= stock.last_price_at:
-                    stock.last_price = price
-                    stock.last_price_at = observed_at
-            
-            session.commit()
-            print(f"+{ticker_inserted}")
-            
-        except Exception as e:
-            print(f"error: {e}")
-            failed += 1
-    
-    _mark_updated_now()
-    print(f"[finnhub_backfill] Done: {inserted} inserted, {skipped} skipped, {failed} failed")
-    return {"inserted": inserted, "skipped": skipped, "failed": failed}
+    print("[finnhub_backfill] ERROR: Finnhub free tier does not support candles endpoint")
+    print("[finnhub_backfill] Use finnhub_update_prices() to fetch current prices instead")
+    return {"inserted": 0, "skipped": 0, "failed": 0}
