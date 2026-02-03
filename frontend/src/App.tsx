@@ -172,7 +172,7 @@ function App() {
 
       <div className="terminal-grid">
         <div className="topbar">
-          <div className="brand">IG-TERM</div>
+          <div className="brand">IGOUDAR Terminal</div>
           <div className="ticker" aria-label="ticker tape">
             <div className="ticker-track">
               {tape.map((s, i) => (
