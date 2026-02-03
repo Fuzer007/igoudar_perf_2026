@@ -186,6 +186,7 @@ function App() {
               ))}
             </div>
           </div>
+          {/* Buttons hidden - uncomment to restore
           <button className="btn" onClick={refresh} disabled={isRefreshing}>
             {isRefreshing ? 'REFRESH…' : 'REFRESH'}
           </button>
@@ -195,6 +196,7 @@ function App() {
           <button className="btn" onClick={triggerBackfill} disabled={isBackfilling}>
             {isBackfilling ? 'BACKFILL…' : 'BACKFILL'}
           </button>
+          */}
         </div>
 
         <section className="panel left" aria-label="industries">
