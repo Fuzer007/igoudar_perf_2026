@@ -52,10 +52,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
   const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [isBackfilling, setIsBackfilling] = useState(false)
-  const [lastAction, setLastAction] = useState<string | null>(null)
+  // Removed unused state: isRefreshing, isUpdating, isBackfilling, lastAction
 
   const stocks = summary?.stocks ?? []
   const industries = summary?.industries ?? []
@@ -72,7 +69,6 @@ function App() {
   }, [filteredStocks, selectedTicker])
 
   async function refresh(): Promise<void> {
-    setIsRefreshing(true)
     setError(null)
     try {
       const res = await fetch('/api/summary')
@@ -82,44 +78,10 @@ function App() {
       if (!selectedTicker && data.stocks.length) setSelectedTicker(data.stocks[0].ticker)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load')
-    } finally {
-      setIsRefreshing(false)
     }
   }
 
-  async function triggerUpdate(): Promise<void> {
-    setIsUpdating(true)
-    setLastAction(null)
-    try {
-      const res = await fetch('/api/actions/update', { method: 'POST' })
-      const body = (await res.json()) as { ok?: boolean; result?: { updated?: number; skipped?: number; failed?: number } }
-      setLastAction(
-        `UPDATE updated=${body?.result?.updated ?? 0} skipped=${body?.result?.skipped ?? 0} failed=${body?.result?.failed ?? 0}`,
-      )
-    } catch (e) {
-      setLastAction(`UPDATE failed: ${e instanceof Error ? e.message : 'unknown error'}`)
-    } finally {
-      setIsUpdating(false)
-      await refresh()
-    }
-  }
-
-  async function triggerBackfill(): Promise<void> {
-    setIsBackfilling(true)
-    setLastAction(null)
-    try {
-      const res = await fetch('/api/actions/backfill?only_missing=false', { method: 'POST' })
-      const body = (await res.json()) as { ok?: boolean; result?: { inserted?: number; skipped?: number; failed?: number } }
-      setLastAction(
-        `BACKFILL inserted=${body?.result?.inserted ?? 0} skipped=${body?.result?.skipped ?? 0} failed=${body?.result?.failed ?? 0}`,
-      )
-    } catch (e) {
-      setLastAction(`BACKFILL failed: ${e instanceof Error ? e.message : 'unknown error'}`)
-    } finally {
-      setIsBackfilling(false)
-      await refresh()
-    }
-  }
+  // Removed unused functions: triggerUpdate, triggerBackfill
 
   useEffect(() => {
     refresh()
@@ -328,7 +290,6 @@ function App() {
             {summary?.now_utc ? `NOW(UTC): ${summary.now_utc}` : 'NOW(UTC): --'}
             {selected ? `  |  SEL: ${selected.ticker}` : ''}
             {selectedIndustry ? `  |  FILTER: ${selectedIndustry}` : ''}
-            {lastAction ? `  |  ${lastAction}` : ''}
           </div>
           <div>
             API: /api/summary  |  Backend: 127.0.0.1:8000
