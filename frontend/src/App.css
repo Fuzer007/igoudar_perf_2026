@@ -4,6 +4,14 @@
   overflow: hidden;
 }
 
+/* Enable smooth touch scrolling on mobile */
+@media (max-width: 768px) {
+  .terminal-root {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 .terminal-grid {
   position: relative;
   z-index: 1;
@@ -24,7 +32,11 @@
   .right {
     grid-column: 1 / 3;
     grid-row: 3;
-    max-height: 200px;
+    max-height: 250px;
+  }
+  .panel-body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 }
 
@@ -32,12 +44,11 @@
 @media (max-width: 768px) {
   .terminal-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(280px, auto) minmax(160px, auto) auto auto;
+    grid-template-rows: auto auto auto auto auto;
     gap: 6px;
     padding: 6px;
     height: auto;
-    min-height: 100%;
-    overflow-y: auto;
+    min-height: 100vh;
   }
   .topbar {
     grid-column: 1;
@@ -60,21 +71,24 @@
   .center {
     grid-column: 1;
     grid-row: 2;
-    min-height: 280px;
+    height: 50vh;
+    min-height: 300px;
+    max-height: 600px;
   }
   /* Industries after stocks */
   .left {
     grid-column: 1;
     grid-row: 3;
-    min-height: 160px;
-    max-height: none;
+    height: 35vh;
+    min-height: 200px;
+    max-height: 400px;
   }
   /* Detail panel */
   .right {
     grid-column: 1;
     grid-row: 4;
-    min-height: 200px;
-    max-height: none;
+    height: auto;
+    min-height: 250px;
   }
   .statusbar {
     grid-column: 1;
@@ -202,6 +216,8 @@
   padding: 8px;
   height: calc(100% - 38px);
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .btn {
@@ -319,18 +335,45 @@
   .panel-body {
     padding: 6px;
     height: auto;
+    max-height: calc(100% - 32px);
     overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
   }
-  /* Make sure panels are visible */
+  /* Make sure panels are visible and scrollable */
   .panel {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
   }
   .left .panel-body,
   .center .panel-body {
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Improve table scrolling on mobile */
+  .table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table thead,
+  .table tbody {
+    display: table;
+    width: 100%;
+  }
+  .table tr {
+    display: table-row;
+  }
+  .table th,
+  .table td {
+    display: table-cell;
   }
 }
 
