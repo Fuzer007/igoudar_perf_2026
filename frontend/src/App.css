@@ -40,28 +40,35 @@
   }
 }
 
-/* Mobile: single column */
+/* Mobile: single column - force override */
 @media (max-width: 768px) {
   .terminal-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto auto;
-    gap: 6px;
-    padding: 6px;
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: unset !important;
+    grid-template-rows: unset !important;
+    gap: 8px;
+    padding: 8px;
     height: auto;
     min-height: 100vh;
+    width: 100%;
   }
   .topbar {
-    grid-column: 1;
-    grid-row: 1;
+    order: 1;
+    grid-column: unset;
+    grid-row: unset;
     flex-wrap: wrap;
-    padding: 8px;
+    padding: 10px;
     gap: 8px;
+    width: 100%;
   }
   .topbar .ticker {
     display: none;
   }
   .topbar .brand {
     flex: 1;
+    font-size: 13px;
+    white-space: nowrap;
   }
   .topbar .btn {
     padding: 8px 12px;
@@ -69,30 +76,43 @@
   }
   /* Stocks first on mobile */
   .center {
-    grid-column: 1;
-    grid-row: 2;
-    height: 50vh;
-    min-height: 300px;
-    max-height: 600px;
+    order: 2;
+    grid-column: unset;
+    grid-row: unset;
+    height: 45vh;
+    min-height: 280px;
+    max-height: 500px;
+    width: 100%;
   }
   /* Industries after stocks */
   .left {
-    grid-column: 1;
-    grid-row: 3;
-    height: 35vh;
-    min-height: 200px;
-    max-height: 400px;
+    order: 3;
+    grid-column: unset;
+    grid-row: unset;
+    height: 30vh;
+    min-height: 180px;
+    max-height: 350px;
+    width: 100%;
   }
   /* Detail panel */
   .right {
-    grid-column: 1;
-    grid-row: 4;
+    order: 4;
+    grid-column: unset;
+    grid-row: unset;
     height: auto;
-    min-height: 250px;
+    min-height: 220px;
+    width: 100%;
   }
   .statusbar {
-    grid-column: 1;
-    grid-row: 5;
+    order: 5;
+    grid-column: unset;
+    grid-row: unset;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    font-size: 9px;
+    width: 100%;
+  }
     flex-wrap: wrap;
     gap: 4px;
     padding: 6px;

@@ -292,7 +292,7 @@ function App() {
             {selectedIndustry ? `  |  FILTER: ${selectedIndustry}` : ''}
           </div>
           <div>
-            API: /api/summary  |  Backend: 127.0.0.1:8000
+            API: /api/summary  |  {window.location.host}
           </div>
         </div>
       </div>
