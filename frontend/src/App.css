@@ -74,24 +74,24 @@
     padding: 8px 12px;
     font-size: 12px;
   }
-  /* Stocks first on mobile */
-  .center {
-    order: 2;
-    grid-column: unset;
-    grid-row: unset;
-    height: 45vh;
-    min-height: 280px;
-    max-height: 500px;
-    width: 100%;
-  }
-  /* Industries after stocks */
+  /* Industries first on mobile */
   .left {
-    order: 3;
+    order: 2;
     grid-column: unset;
     grid-row: unset;
     height: 30vh;
     min-height: 180px;
     max-height: 350px;
+    width: 100%;
+  }
+  /* Stocks after industries */
+  .center {
+    order: 3;
+    grid-column: unset;
+    grid-row: unset;
+    height: 45vh;
+    min-height: 280px;
+    max-height: 500px;
     width: 100%;
   }
   /* Detail panel */
@@ -112,11 +112,6 @@
     padding: 8px;
     font-size: 9px;
     width: 100%;
-  }
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 6px;
-    font-size: 10px;
   }
 }
 
